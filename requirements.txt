@@ -1,0 +1,17 @@
+# Core LangChain library for building AI applications
+langchain
+
+# Integration with Ollama for local LLM support
+langchain-ollama
+
+# Vector store implementation using Chroma
+langchain-chroma
+
+# Data manipulation and analysis library
+pandas
+
+# Database ORM and connectivity
+sqlalchemy
+
+# Environment variable management
+python-dotenv
