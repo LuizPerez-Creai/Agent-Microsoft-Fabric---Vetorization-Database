@@ -2,7 +2,7 @@ import pyodbc
 import struct
 from azure.identity import AzureCliCredential
 from itertools import chain, repeat
-import csv
+import pandas as pd
 import os
 
 # 👉 Configura tu SQL endpoint y tabla
@@ -12,7 +12,6 @@ table_names = [
     "Customers", "Products", "Stores", "Sales", "Employees",
     "Deliveries", "Suppliers", "Inventory", "Store_Issues", "Ratings"
 ]
-
 
 # 🔐 Azure AD token via Azure CLI
 credential = AzureCliCredential()
@@ -32,10 +31,12 @@ connection_string = f"""
     Encrypt=yes;
     TrustServerCertificate=no;
 """
+
 # 🚀 Ejecuta el SELECT vacío para obtener los encabezados
 conn = pyodbc.connect(connection_string, attrs_before={1256: token_struct})
 cursor = conn.cursor()
-os.makedirs("csv_data", exist_ok=True)
+os.makedirs("parquet_data", exist_ok=True)
+
 for table_name in table_names:
     # Ejecuta el SELECT vacío para obtener los encabezados
     cursor.execute(f"SELECT * FROM {table_name}")
@@ -46,15 +47,13 @@ for table_name in table_names:
     # Fetch all rows
     rows = cursor.fetchall()
 
-    # Escribir los datos a un archivo CSV
-    csv_filename = os.path.join("csv_data", f"{table_name}.csv")
-    with open(csv_filename, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerow(columns)  # Header
-        for row in rows:
-            writer.writerow(row)
+    # Convertir a DataFrame
+    df = pd.DataFrame.from_records(rows, columns=columns)
 
-    print(f"✅ Data from '{table_name}' saved to '{csv_filename}'.")
+    # Guardar como Parquet
+    parquet_filename = os.path.join("parquet_data", f"{table_name}.parquet")
+    df.to_parquet(parquet_filename, index=False)
+    print(f"✅ Data from '{table_name}' saved to '{parquet_filename}'")
 
 # Cerrar conexión
 cursor.close()
